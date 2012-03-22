@@ -1,3 +1,4 @@
+#include "main.h"
 #include "buttons.h"
 #include "pin_config.h"
 #include <avr/io.h>
@@ -5,7 +6,7 @@
 #include <util/delay.h>
 
 extern volatile uint8_t new_sound, new_sound_id;
-static volatile uint8_t debounce_count = 0;
+static uint8_t debounce_count = 0;
 
 static void set_keys_mode1(void) {
 	//inputs
@@ -16,6 +17,7 @@ static void set_keys_mode1(void) {
 	PORTB &= ~(BMASK);
 	DDRD |= DMASK;
 	PORTD &= ~(DMASK);
+	_delay_us(SWITCH_TIME);
 }
 static void set_keys_mode2(void) {
 	//inputs
@@ -26,20 +28,24 @@ static void set_keys_mode2(void) {
 	//outputs
 	DDRC |= CMASK;
 	PORTC &= ~(CMASK);
+	_delay_us(SWITCH_TIME);
 }
 
 void keys_init(void) {
 	set_keys_mode1();
 	// set pin change interrupt mask
 	PCMSK1 = CMASK;
+	// clear pin change interrupt flag
+	PCIFR |= _BV(PCIF1);
 	// enable pin change interrupt
 	PCICR |= _BV(PCIE1);
+	// enable debounce timer interrupt
+	TIMSK2 |= _BV(TOIE2);
 }
 
 static uint8_t get_key(void) {
 	uint8_t columns = (~PINC) & CMASK;
 	set_keys_mode2();
-	_delay_us(10);
 	uint8_t rows = ((~PINB) & BMASK) + ((~PIND) & DMASK);
 	set_keys_mode1();
 	if (columns & _BV(4)) {
@@ -52,25 +58,23 @@ static uint8_t get_key(void) {
 	return 0;
 }
 
-ISR(PCINT1_vect){
-	PCICR &= ~(_BV(PCIE1));		// disable pin change interrupt
-	_delay_us(10);
-	if ((~PINC) & CMASK) {
-		new_sound = 1;
-		new_sound_id = get_key();
-	}
-	TCCR2B |= _BV(CS22) | _BV(CS21) | _BV(CS20); // prescaler /1024 (16.3ms until OVF)
-	TIMSK2 |= _BV(TOIE2);		// enable debounce timer interrupt
+ISR(PCINT1_vect) {  // pin change
+	// disable pin change interrupt
+	PCICR &= ~(_BV(PCIE1));
+	// start debounce timer, prescaler /256
+	TCCR2B |= _BV(CS22) | _BV(CS21);
 }
 
-ISR(TIMER2_OVF_vect) {
-	debounce_count++;
-	if (debounce_count == 10) {
+ISR(TIMER2_OVF_vect) {  // debounce timer
+	if (debounce_count++ == DEBOUNCE_COUNT_MAX) {
 		debounce_count = 0;
-		// stop and reset timer, disable interrupt
+		if ((~PINC) & CMASK) {
+			new_sound = 1;
+			new_sound_id = get_key();
+		}
+		// stop and reset timer
 		TCCR2B = 0;
 		TCNT2 = 0;
-		TIMSK2 &= ~(_BV(TOIE2));
 		// clear pin change interrupt flag
 		PCIFR |= _BV(PCIF1);
 		// enable pin change interrupt

@@ -65,7 +65,7 @@ static inline void spi_card_init(void) {
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
 	/* Set baud rate. */
 	/* IMPORTANT: The Baud Rate must be set after the transmitter is enabled */
-	UBRR0 = 19;		// 400 kHz for card initialisation
+	UBRR0 = F_CPU / (2*400E3) - 1;		// 400 kHz for card initialisation
 }
 
 void disk_shutdown(void) {

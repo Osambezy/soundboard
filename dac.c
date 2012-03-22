@@ -18,8 +18,8 @@ static volatile uint8_t low_byte, sending;
 
 extern WAVinfo_t wavinfo;
 
-static inline void DAC_timer_start(void);
-static inline void DAC_timer_stop(void);
+static void DAC_timer_start(void);
+static void DAC_timer_stop(void);
 static inline void DAC_output(uint16_t data);
 
 #define SILENCE 0x800
@@ -63,16 +63,6 @@ void process_audio(uint8_t data_byte) {
 }
 
 void stop_audio(void) {
-	// apply a linear fade out
-	/*MÜLL!
-	uint8_t f1 = audio_rpos + 1, f2 = 1, c;
-	while (f2) {
-		for (c=0; c<f2; c++) audio_buffer[f1] -= (audio_buffer[f1]>>8);
-		f1++;
-		f2++;
-	}
-	while (audio_rpos != f1); */
-
 	DAC_timer_stop();
 	_delay_us(30);   // wait for transmission to complete
 	DAC_output(SILENCE);
@@ -81,26 +71,25 @@ void stop_audio(void) {
 	buffer_ready = 0;
 }
 
-static inline void DAC_timer_start(void) {
+static void DAC_timer_start(void) {
 	//set timer1 output compare A value
 	switch (wavinfo.sample_rate) {
 		case 8000:
-		OCR1A = 2000;
+		OCR1A = (F_CPU / 8000);
 		break;
 		case 11025:
-		OCR1A = 1451;
+		OCR1A = (F_CPU / 11025);
 		break;
 		case 22050:
-		OCR1A = 726;
+		OCR1A = (F_CPU / 22050);
 		break;
-		case 44100:
-		OCR1A = 363;
-		break;
+		default:
+		OCR1A = (F_CPU / 44100);
 	}
 	TCCR1B |= _BV(CS10);		//start timer, no prescaling
 }
 
-static inline void DAC_timer_stop(void) {
+static void DAC_timer_stop(void) {
 	TCCR1B &= ~(_BV(CS10));		//stop timer
 	TCNT1 = 0;					//reset timer
 }
@@ -139,7 +128,6 @@ void DAC_shutdown(void) {
 
 ISR(TIMER1_COMPA_vect) {
 	// this routine is executed at the sampling rate
-	// timer values are adjusted for a rate of 44.25 kHz
 	DAC_output(audio_buffer[audio_rpos++]);
 }
 

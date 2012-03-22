@@ -1,14 +1,14 @@
 #include "main.h"
 #include "pin_config.h"
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <util/delay.h>
-#include <stdint.h>
 #include "wavfile.h"
 #include "dac.h"
 #include "diskio.h"
 #include "pff.h"
 #include "buttons.h"
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <util/delay.h>
+#include <stdint.h>
 
 volatile uint8_t new_sound = 0, new_sound_id=0;
 
@@ -38,7 +38,7 @@ inline void MOSFET_off() {
 static void hibernate_timer_init(void) {
 	hibernate_count = 0;
 	TCNT0 = 0;
-	TCCR0B |= _BV(CS02) | _BV(CS00);	// prescaler /1024 (16.3ms until OVF)
+	TCCR0B |= _BV(CS02) | _BV(CS00);	// prescaler /1024
 	TIMSK0 |= _BV(TOIE0);				// enable overflow interrupt
 }
 static void hibernate(void) {
@@ -78,6 +78,8 @@ int main(void) {
 	pf_mount(&fs);
 
 	while(1) {
+		//TODO: rewrite this loop!
+		
 		cli(); // disable interrupts to avoid race condition with sleep function
 		if (new_sound) {
 			sei();
@@ -124,7 +126,7 @@ int main(void) {
 			sleep_cpu();
 			sleep_disable();
 		}
-		if (hibernate_count > 662) { // 3662 = 1 min
+		if (hibernate_count > HIBER_COUNT_MAX) { //TODO: make atomic!
 			hibernate();
 		}
 	}

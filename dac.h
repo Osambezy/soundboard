@@ -1,11 +1,7 @@
-/*
- * Low level access routines to the LTC1257 DAC device.
- */
-
 #ifndef _DAC_H_
 #define _DAC_H_
 
-#include <inttypes.h>
+#include <stdint.h>
 
 void DAC_init(void);
 void DAC_shutdown(void);
