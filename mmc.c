@@ -252,14 +252,17 @@ DRESULT disk_readp (
 					*buff++ = spi_card_rcv();
 				} while (--cnt);
 			} else {	/* Forward data to the outgoing stream (depends on the project) */
-				spi_card_rcv_async();
+				/*spi_card_rcv_async();
 				BYTE received;
 				do {
 					received = spi_card_rcv_async_fetch();
 					cnt--;
 					if (cnt) spi_card_rcv_async();
 					FORWARD(received);
-				} while (cnt);
+				} while (cnt);*/
+				do {
+					FORWARD(spi_card_rcv());
+				} while (--cnt);
 			}
 
 			/* Skip trailing bytes and CRC */

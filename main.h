@@ -1,7 +1,7 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#define F_CPU 20.000000E6
+#define F_CPU 16.000000E6
 
 // time since last keypress, when device goes into hibernate mode
 #define HIBER_TIME		10		// seconds

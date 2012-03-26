@@ -41,22 +41,24 @@ static void hibernate_timer_init(void) {
 	TCCR0B |= _BV(CS02) | _BV(CS00);	// prescaler /1024
 	TIMSK0 |= _BV(TOIE0);				// enable overflow interrupt
 }
+static void hibernate_timer_stop(void) {
+	hibernate_count = 0;
+	TCCR0B &= ~(_BV(CS02) | _BV(CS01) | _BV(CS00)); // stop timer
+	TIFR0 |= _BV(TOV0); // clear pending interrupt
+}
+
 static void hibernate(void) {
-	// stop and reset timer, disable interrupt
-	TCCR0B = 0;
-	TIMSK0 &= ~(_BV(TOIE0));
 	hibernating = 1;
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	DAC_shutdown();
 	disk_shutdown();
 	MOSFET_off();
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 }
 static void wakeup(void) {
-	MOSFET_on();
-	hibernate_timer_init();
 	hibernating = 0;
 	set_sleep_mode(SLEEP_MODE_IDLE);
-	_delay_ms(10);
+	MOSFET_on();
+	_delay_ms(100);
 	DAC_init();
 	pf_mount(&fs);
 }
@@ -78,14 +80,11 @@ int main(void) {
 	pf_mount(&fs);
 
 	while(1) {
-		//TODO: rewrite this loop!
-		
 		cli(); // disable interrupts to avoid race condition with sleep function
 		if (new_sound) {
-			sei();
-			if (hibernating) wakeup();
-			else hibernate_reset();
+			hibernate_timer_stop();
 			new_sound = 0;
+			sei();
 			switch (new_sound_id) {
 			case 0:
 				continue;
@@ -120,15 +119,23 @@ int main(void) {
 				}
 			} while (res==0 && br==read_length && wavinfo.data_length>0 && !new_sound);
 			stop_audio();
+			hibernate_timer_init();
 		} else {
 			sleep_enable();
 			sei();
 			sleep_cpu();
 			sleep_disable();
 		}
-		if (hibernate_count > HIBER_COUNT_MAX) { //TODO: make atomic!
-			hibernate();
+		cli();
+		if (hibernating) {
+			wakeup();
+		} else {
+			if (hibernate_count > HIBER_COUNT_MAX) {
+				hibernate_timer_stop();
+				hibernate();
+			}
 		}
+		sei();
 	}
 	
 	return 0;
