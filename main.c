@@ -25,13 +25,14 @@ ISR(TIMER0_OVF_vect) {
 ISR(BADISR_vect) {
 } // unknown interrupt
 
-inline void MOSFET_init() {
+void MOSFET_init() {
 	MOSFETDDR |= _BV(MOSFET);
 }
-inline void MOSFET_on() {
+void MOSFET_on() {
 	MOSFETPORT |= _BV(MOSFET);
+	_delay_ms(200);
 }
-inline void MOSFET_off() {
+void MOSFET_off() {
 	MOSFETPORT &= ~(_BV(MOSFET));
 }
 
@@ -58,13 +59,37 @@ static void wakeup(void) {
 	hibernating = 0;
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	MOSFET_on();
-	_delay_ms(100);
 	DAC_init();
 	pf_mount(&fs);
 }
 static void hibernate_reset(void) {
 	hibernate_count = 0;
 }
+
+void sound_gut(void) {
+	wavinfo.bits_per_sample = 8;
+	wavinfo.sample_rate = 44100;
+	wavinfo.block_align = 1;
+	wavinfo.num_channels = 1;
+	for (uint8_t i = 0; i<200; i++) {
+		for (uint8_t j = 0; j<100; j++) process_audio(0x70);
+		for (uint8_t j = 0; j<100; j++) process_audio(0x90);
+	}
+	stop_audio();
+}
+
+void sound_osch(void) {
+	wavinfo.bits_per_sample = 8;
+	wavinfo.sample_rate = 44100;
+	wavinfo.block_align = 1;
+	wavinfo.num_channels = 1;
+	for (uint8_t i = 0; i<255; i++) {
+		for (uint8_t j = 0; j<11; j++) process_audio(0x70);
+		for (uint8_t j = 0; j<19; j++) process_audio(0x90);
+	}
+	stop_audio();
+}
+		
 
 int main(void) {
 	FRESULT res;
@@ -77,7 +102,9 @@ int main(void) {
 	DAC_init();
 	keys_init();
 	hibernate_timer_init();
-	pf_mount(&fs);
+
+	if (pf_mount(&fs)) { sound_osch(); }
+	else { sound_gut(); }
 
 	while(1) {
 		cli(); // disable interrupts to avoid race condition with sleep function

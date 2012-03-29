@@ -21,6 +21,7 @@ extern WAVinfo_t wavinfo;
 static void DAC_timer_start(void);
 static void DAC_timer_stop(void);
 static inline void DAC_output(uint16_t data);
+static void DAC_silence(void);
 
 #define SILENCE 0x800
 
@@ -58,14 +59,12 @@ void process_audio(uint8_t data_byte) {
 			}
 		}
 		sample_pos = 0;
-		//if (audio_wpos==A_BUF_SIZE) audio_wpos = 0;
 	}
 }
 
 void stop_audio(void) {
 	DAC_timer_stop();
-	_delay_us(30);   // wait for transmission to complete
-	DAC_output(SILENCE);
+	DAC_silence();
 	audio_rpos = 0;
 	audio_wpos = 0;
 	buffer_ready = 0;
@@ -95,20 +94,22 @@ static void DAC_timer_stop(void) {
 }
 
 void DAC_init(void) {
-	//empty audio buffer
-	/* uint8_t b = 0;
-	do audio_buffer[b++] = SILENCE;
-	while (b != 0); */
-	
 	// set LOAD pin as output and go to idle state (high)
 	DACDDR |= (1 << DACPIN_LOAD);
 	DACLOAD(LEV_HIGH);
-	// init SPI output
-	DDRB |= _BV(DDB2) | _BV(DDB3) | _BV(DDB5);
-	SPCR = _BV(SPIE) | _BV(SPE) | _BV(MSTR) | _BV(SPR0);
-	SPSR = _BV(SPI2X);
+	// init USART in SPI mode
+	UBRR0 = 0;
+	/* Setting the XCK port pin as output, enables master mode. */
+	DDRD |= (1<<PD4);
+	/* Set MSPI mode of operation and SPI data mode 0. */
+	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(0<<UCPHA0)|(0<<UCPOL0);
+	/* Enable transmitter and transmit complete interrupt. */
+	UCSR0B = _BV(TXEN0) | _BV(TXCIE0);
+	/* Set baud rate. */
+	/* IMPORTANT: The Baud Rate must be set after the transmitter is enabled */
+	UBRR0 = 5;
 	
-	DAC_output(SILENCE);
+	DAC_silence();
 
 	// init audio sample timer
 	TCCR1B = _BV(WGM12);			//CTC mode
@@ -121,9 +122,25 @@ void DAC_shutdown(void) {
 	// set LOAD tri-state
 	DACDDR &= ~(1 << DACPIN_LOAD);
 	DACLOAD(LEV_LOW);
-	// disable SPI
-	SPCR = 0;
-	DDRB &= ~(_BV(DDB2) | _BV(DDB3) | _BV(DDB5));
+
+	//disable usart spi
+	UCSR0B = 0;
+	UCSR0C = 0;
+	//set XCK pin tri-state
+	DDRD &= ~(_BV(PD4));
+}
+
+static void trigger_load(void) {
+	DACLOAD(LEV_LOW);
+	//_delay_us (0.15); // min LOAD pulse width (see LTC 1257 docs)
+	DACLOAD(LEV_HIGH);
+}
+
+static void DAC_silence(void) {
+	_delay_us(30);
+	DAC_output(SILENCE);
+	_delay_us(30);
+	trigger_load();
 }
 
 ISR(TIMER1_COMPA_vect) {
@@ -132,21 +149,19 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 static inline void DAC_output(uint16_t data) {
+	trigger_load();
+	
 	low_byte = data;
 	sending = 1;
-	SPDR = data>>8;
+	UDR0 = data>>8;
 }
 
-ISR(SPI_STC_vect) {
+//ISR(SPI_STC_vect) {
+ISR(USART_TX_vect) {
 	// transmission completed
 	if (sending) {
 		// send second byte
 		sending = 0;
-		SPDR = low_byte;
-	} else {
-		// both bytes sent, trigger LOAD line
-		DACLOAD(LEV_LOW);
-		//_delay_us (0.15); // min LOAD pulse width (see LTC 1257 docs)
-		DACLOAD(LEV_HIGH);
+		UDR0 = low_byte;
 	}
 }

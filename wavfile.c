@@ -40,7 +40,7 @@ uint8_t parse_wav_header(void) {
 				(WAVfmt.num_channels != 1 && WAVfmt.num_channels != 2) ||
 				(WAVfmt.sample_rate != 44100 && WAVfmt.sample_rate != 22050 && WAVfmt.sample_rate != 11025 && WAVfmt.sample_rate != 8000) ||
 				(WAVfmt.bits_per_sample != 8 && WAVfmt.bits_per_sample != 16) ||
-				(WAVfmt.num_channels == 2 && WAVfmt.sample_rate == 44100 && WAVfmt.bits_per_sample == 16) ||
+				//(WAVfmt.num_channels == 2 && WAVfmt.sample_rate == 44100 && WAVfmt.bits_per_sample == 16) ||
 				WAVfmt.block_align > 4) return 2;
 			wavinfo.num_channels = WAVfmt.num_channels;
 			wavinfo.sample_rate = WAVfmt.sample_rate;

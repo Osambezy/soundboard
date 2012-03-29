@@ -56,51 +56,44 @@ static inline void spi_card_init(void) {
 	//set CS pin as output
 	CSDDR |= _BV(CS);
 	
-	UBRR0 = 0;
-	/* Setting the XCK port pin as output, enables master mode. */
-	DDRD |= (1<<PD4);
-	/* Set MSPI mode of operation and SPI data mode 0. */
-	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(0<<UCPHA0)|(0<<UCPOL0);
-	/* Enable receiver and transmitter. */
-	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-	/* Set baud rate. */
-	/* IMPORTANT: The Baud Rate must be set after the transmitter is enabled */
-	UBRR0 = F_CPU / (2*400E3) - 1;		// 400 kHz for card initialisation
+	// init SPI
+	DDRB |= _BV(DDB3) | _BV(DDB5);
+	SPCR = _BV(SPE) | _BV(MSTR) | _BV(SPR1) | _BV(SPR0);
 }
 
 void disk_shutdown(void) {
-	//disable usart spi
-	UCSR0B = 0;
-	UCSR0C = 0;
+	// disable SPI
+	SPCR = 0;
+	SPSR = 0;
+	DDRB &= ~(_BV(DDB3) | _BV(DDB5));
+	
 	//set CS pin tri-state
 	CSDDR &= ~(_BV(CS));
-	//set XCK pin tri-state
-	DDRD &= ~(_BV(PD4));
 }
 
 static inline void spi_card_vollgas(void) {
-	UBRR0 = 0; // maximum clock speed, fCPU/2
+	//SPCR &= ~(_BV(SPR1));
+	SPCR &= ~(_BV(SPR1) | _BV(SPR0));
+	SPSR = _BV(SPI2X);
 }
 
 static void spi_card_send(BYTE data) {
-	/* Wait for empty transmit buffer */
-	while ( !( UCSR0A & (1<<UDRE0)) );
-	/* Put data into buffer, sends the data */
-	UDR0 = data;
+	// put data into buffer, sends the data
+	SPDR = data;
+	// wait for transmission to complete
+	while(!(SPSR & (1<<SPIF)));
+	// clear receive buffer
+	SPDR;
 }
 static void spi_card_rcv_async(void) {
-	/* Wait for empty transmit buffer */
-	while ( !( UCSR0A & (1<<UDRE0)) );
-	/* Clear input buffer */
-	UDR0;
-	/* Send dummy byte to start clock */
-	UDR0 = 0xFF;
+	// send dummy byte to start clock
+	SPDR = 0xFF;
 }
 static BYTE spi_card_rcv_async_fetch(void) {
-	/* Wait for data to be received */
-	while ( !(UCSR0A & (1<<RXC0)) );
-	/* Get and return received data from buffer */
-	return UDR0;
+	// wait for data to be received
+	while(!(SPSR & (1<<SPIF)));
+	// get and return received data from buffer
+	return SPDR;
 }
 static BYTE spi_card_rcv(void) {
 	spi_card_rcv_async();
@@ -252,17 +245,17 @@ DRESULT disk_readp (
 					*buff++ = spi_card_rcv();
 				} while (--cnt);
 			} else {	/* Forward data to the outgoing stream (depends on the project) */
-				/*spi_card_rcv_async();
+				spi_card_rcv_async();
 				BYTE received;
 				do {
 					received = spi_card_rcv_async_fetch();
 					cnt--;
 					if (cnt) spi_card_rcv_async();
 					FORWARD(received);
-				} while (cnt);*/
-				do {
+				} while (cnt);
+				/*do {
 					FORWARD(spi_card_rcv());
-				} while (--cnt);
+				} while (--cnt);*/
 			}
 
 			/* Skip trailing bytes and CRC */
