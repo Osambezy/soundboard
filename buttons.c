@@ -48,14 +48,52 @@ static uint8_t get_key(void) {
 	set_keys_mode2();
 	uint8_t rows = ((~PINB) & BMASK) + ((~PIND) & DMASK);
 	set_keys_mode1();
-	if (columns & _BV(4)) {
-		if (rows & _BV(0)) return 1;
-		else if (rows & _BV(7)) return 4;
-	} else if (columns & _BV(5)) {
-		if (rows & _BV(0)) return 2;
-		else if (rows & _BV(7)) return 3;
+	uint8_t id;
+	switch (rows) {
+		case row0:
+		id = 0;
+		break;
+		case row1:
+		id = 6;
+		break;
+		case row2:
+		id = 12;
+		break;
+		case row3:
+		id = 18;
+		break;
+		case row4:
+		id = 24;
+		break;
+		case row5:
+		id = 30;
+		break;
+		default:
+		return 255;
 	}
-	return 0;
+	switch (columns) {
+		case col0:
+		id += 0;
+		break;
+		case col1:
+		id += 1;
+		break;
+		case col2:
+		id += 2;
+		break;
+		case col3:
+		id += 3;
+		break;
+		case col4:
+		id += 4;
+		break;
+		case col5:
+		id += 5;
+		break;
+		default:
+		return 255;
+	}
+	return id;
 }
 
 ISR(PCINT1_vect) {  // pin change

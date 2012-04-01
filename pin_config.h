@@ -2,22 +2,35 @@
 #define _PINCONFIG_
 
 // key matrix rows
-#define BMASK (_BV(PB0))
-#define DMASK (_BV(PD2) | _BV(PD3) | _BV(PD5) | _BV(PD6) | _BV(PD7))
+#define BMASK (_BV(0))
+#define DMASK (_BV(2) | _BV(3) | _BV(5) | _BV(6) | _BV(7))
+#define row0	_BV(0)
+#define row1	_BV(7)
+#define row2	_BV(6)
+#define row3	_BV(5)
+#define row4	_BV(3)
+#define row5	_BV(2)
+
 // key matrix columns
-#define CMASK (_BV(PC1) | _BV(PC2) | _BV(PC3) | _BV(PC4) | _BV(PC5)) 
+#define CMASK (_BV(0) | _BV(1) | _BV(2) | _BV(3) | _BV(4) | _BV(5)) 
+#define col0	_BV(0)
+#define col1	_BV(1)
+#define col2	_BV(2)
+#define col3	_BV(3)
+#define col4	_BV(4)
+#define col5	_BV(5)
 
-#define MOSFETDDR		DDRB
-#define	MOSFETPORT		PORTB
-#define MOSFET			PB2
+#define MOSFETDDR		DDRD
+#define	MOSFETPORT		PORTD
+#define MOSFET			0
 
-#define CSPORT		PORTC
-#define CSDDR		DDRC
-#define CS			PC0
+#define CSPORT		PORTB
+#define CSDDR		DDRB
+#define CS			2
 
 #define DACPORT		PORTB
 #define DACDDR		DDRB
-#define DACPIN_LOAD	PB1
+#define DACPIN_LOAD	1
 
 #define DACLOAD(LEVEL)	DACPORT = (LEVEL) ? (DACPORT | _BV(DACPIN_LOAD)):(DACPORT & ~_BV(DACPIN_LOAD))
  

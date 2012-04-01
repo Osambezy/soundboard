@@ -1,0 +1,80 @@
+#include <stdio.h>
+
+char* filenames (uint8_t id) {
+	switch (id) {
+		case 0:
+		return "3.wav";
+		case 1:
+		return "4.wav";
+		case 2:
+		return "5.wav";
+		case 3:
+		return "6.wav";
+		case 4:
+		return "7.wav";
+		case 5:
+		return "D.wav";
+		case 6:
+		return "80.wav";
+		case 7:
+		return "81.wav";
+		case 8:
+		return "82.wav";
+		case 9:
+		return "83.wav";
+		case 10:
+		return "84.wav";
+		case 11:
+		return "NU.wav";
+		case 12:
+		return "85.wav";
+		case 13:
+		return "86.wav";
+		case 14:
+		return "87.wav";
+		case 15:
+		return "88.wav";
+		case 16:
+		return "89.wav";
+		case 17:
+		return "SU.wav";
+		case 18:
+		return "90.wav";
+		case 19:
+		return "91.wav";
+		case 20:
+		return "92.wav";
+		case 21:
+		return "93.wav";
+		case 22:
+		return "94.wav";
+		case 23:
+		return "UM.wav";
+		case 24:
+		return "95.wav";
+		case 25:
+		return "96.wav";
+		case 26:
+		return "97.wav";
+		case 27:
+		return "98.wav";
+		case 28:
+		return "99.wav";
+		case 29:
+		return "SKL.wav";
+		case 30:
+		return "M.wav";
+		case 31:
+		return "AW.wav";
+		case 32:
+		return "WT.wav";
+		case 33:
+		return "AR.wav";
+		case 34:
+		return "K.wav";
+		case 35:
+		return "ST.wav";
+		default:
+		return NULL;
+	}
+}

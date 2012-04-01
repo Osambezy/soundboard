@@ -1,5 +1,5 @@
 PRG            = soundboard
-OBJ            = main.o wavfile.o dac.o pff.o mmc.o buttons.o
+OBJ            = main.o wavfile.o dac.o pff.o mmc.o buttons.o hibernate.o
 #MCU_TARGET     = at90s2313
 #MCU_TARGET     = at90s2333
 #MCU_TARGET     = at90s4414

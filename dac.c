@@ -7,12 +7,12 @@
 #include <util/delay.h>
 
 static uint8_t sample_buffer[4];
-static uint8_t sample_pos = 0;
+static uint8_t sample_pos;
 
 static uint16_t audio_buffer[256];
-static volatile uint8_t audio_rpos = 0;
-static uint8_t audio_wpos = 0;
-static uint8_t buffer_ready = 0;
+static volatile uint8_t audio_rpos;
+static uint8_t audio_wpos;
+static uint8_t buffer_ready;
 
 static volatile uint8_t low_byte, sending;
 
@@ -94,6 +94,11 @@ static void DAC_timer_stop(void) {
 }
 
 void DAC_init(void) {
+	sample_pos = 0;
+	buffer_ready = 0;
+	audio_rpos = 0;
+	audio_wpos = 0;
+	
 	// set LOAD pin as output and go to idle state (high)
 	DACDDR |= (1 << DACPIN_LOAD);
 	DACLOAD(LEV_HIGH);
@@ -113,6 +118,7 @@ void DAC_init(void) {
 
 	// init audio sample timer
 	TCCR1B = _BV(WGM12);			//CTC mode
+	TCNT1 = 0;						//reset
 	TIMSK1 = _BV(OCIE1A);			//enable timer1 output compare A interrupt
 	// note: timer is not running yet
 }
@@ -156,7 +162,6 @@ static inline void DAC_output(uint16_t data) {
 	UDR0 = data>>8;
 }
 
-//ISR(SPI_STC_vect) {
 ISR(USART_TX_vect) {
 	// transmission completed
 	if (sending) {

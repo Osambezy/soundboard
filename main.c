@@ -5,66 +5,20 @@
 #include "diskio.h"
 #include "pff.h"
 #include "buttons.h"
-#include <avr/interrupt.h>
+#include "hibernate.h"
+#include "filenames.c"
 #include <avr/sleep.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include <stdint.h>
 
-volatile uint8_t new_sound = 0, new_sound_id=0;
-
+volatile uint8_t new_sound = 0, new_sound_id = 0;
 WAVinfo_t wavinfo;
+FATFS fs;
 
-static FATFS fs;
-static volatile uint32_t hibernate_count = 0;
-static uint8_t hibernating = 0;
-
-ISR(TIMER0_OVF_vect) {
-	hibernate_count++;
-}
-
-ISR(BADISR_vect) {
-} // unknown interrupt
-
-void MOSFET_init() {
-	MOSFETDDR |= _BV(MOSFET);
-}
-void MOSFET_on() {
-	MOSFETPORT |= _BV(MOSFET);
-	_delay_ms(200);
-}
-void MOSFET_off() {
-	MOSFETPORT &= ~(_BV(MOSFET));
-}
-
-static void hibernate_timer_init(void) {
-	hibernate_count = 0;
-	TCNT0 = 0;
-	TCCR0B |= _BV(CS02) | _BV(CS00);	// prescaler /1024
-	TIMSK0 |= _BV(TOIE0);				// enable overflow interrupt
-}
-static void hibernate_timer_stop(void) {
-	hibernate_count = 0;
-	TCCR0B &= ~(_BV(CS02) | _BV(CS01) | _BV(CS00)); // stop timer
-	TIFR0 |= _BV(TOV0); // clear pending interrupt
-}
-
-static void hibernate(void) {
-	hibernating = 1;
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-	DAC_shutdown();
-	disk_shutdown();
-	MOSFET_off();
-}
-static void wakeup(void) {
-	hibernating = 0;
-	set_sleep_mode(SLEEP_MODE_IDLE);
-	MOSFET_on();
-	DAC_init();
-	pf_mount(&fs);
-}
-static void hibernate_reset(void) {
-	hibernate_count = 0;
-}
+// unknown interrupt
+//ISR(BADISR_vect) {
+//}
 
 void sound_gut(void) {
 	wavinfo.bits_per_sample = 8;
@@ -89,7 +43,6 @@ void sound_osch(void) {
 	}
 	stop_audio();
 }
-		
 
 int main(void) {
 	FRESULT res;
@@ -97,11 +50,9 @@ int main(void) {
 
 	sei(); // Globally enable interrupts
 
-	MOSFET_init();
-	MOSFET_on();
+	hibernate_init();
 	DAC_init();
 	keys_init();
-	hibernate_timer_init();
 
 	if (pf_mount(&fs)) { sound_osch(); }
 	else { sound_gut(); }
@@ -112,28 +63,16 @@ int main(void) {
 			hibernate_timer_stop();
 			new_sound = 0;
 			sei();
-			switch (new_sound_id) {
-			case 0:
-				continue;
-			case 1:
-				pf_open("1.wav");
-				break;
-			case 2:
-				pf_open("2.wav");
-				break;
-			case 3:
-				pf_open("3.wav");
-				break;
-			case 4:
-				pf_open("4.wav");
-				break;
+			char* filename = filenames(new_sound_id);
+			if (filename == NULL) goto sound_ende;
+			uint8_t tries = 3;
+			while (pf_open(filename) && pf_open("error1.wav")) {
+				if ((tries--) == 0) goto sound_ende;
+				_delay_ms(10);
+				pf_mount(&fs);
 			}
 			if (parse_wav_header()) {
-				// maybe not mounted?
-				if (pf_mount(&fs)) continue;
-				else { // try again
-					if (parse_wav_header()) continue;
-				}
+				if (pf_open("error2.wav") || parse_wav_header()) goto sound_ende;
 			}
 			do {
 				#define read_length 16384
@@ -146,6 +85,7 @@ int main(void) {
 				}
 			} while (res==0 && br==read_length && wavinfo.data_length>0 && !new_sound);
 			stop_audio();
+			sound_ende:
 			hibernate_timer_init();
 		} else {
 			sleep_enable();
@@ -153,16 +93,7 @@ int main(void) {
 			sleep_cpu();
 			sleep_disable();
 		}
-		cli();
-		if (hibernating) {
-			wakeup();
-		} else {
-			if (hibernate_count > HIBER_COUNT_MAX) {
-				hibernate_timer_stop();
-				hibernate();
-			}
-		}
-		sei();
+		hibernate_check();
 	}
 	
 	return 0;
