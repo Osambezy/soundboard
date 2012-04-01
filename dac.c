@@ -14,9 +14,12 @@ static volatile uint8_t audio_rpos;
 static uint8_t audio_wpos;
 static uint8_t buffer_ready;
 
+static volatile uint8_t volume = 3;
+
 static volatile uint8_t low_byte, sending;
 
 extern WAVinfo_t wavinfo;
+extern uint8_t special_mode;
 
 static void DAC_timer_start(void);
 static void DAC_timer_stop(void);
@@ -26,8 +29,18 @@ static void DAC_silence(void);
 #define SILENCE 0x800
 
 void process_audio(uint8_t data_byte) {
+	static uint8_t double_speed = 0;
+	
 	sample_buffer[sample_pos++] = data_byte;
+	
 	if (sample_pos==wavinfo.block_align) {
+		sample_pos = 0;
+		if (special_mode == 5) {
+			if (double_speed) {
+				double_speed = 0;
+				return;
+			} else double_speed = 1;
+		}
 		if (buffer_ready) {
 			// playback running, wait if buffer is full
 			while (audio_rpos == audio_wpos);
@@ -38,27 +51,42 @@ void process_audio(uint8_t data_byte) {
 				DAC_timer_start();
 			}
 		}
+		uint16_t sample;
 		if (wavinfo.bits_per_sample==8) {
 			if(wavinfo.num_channels==1) {
 				// 8 bit mono
-				audio_buffer[audio_wpos++] = sample_buffer[0]<<4;
+				sample = sample_buffer[0]<<4;
 			} else {
 				// 8 bit stereo
-				audio_buffer[audio_wpos++] = (sample_buffer[0]<<3) + (sample_buffer[1]<<3);
+				sample = (sample_buffer[0]<<3) + (sample_buffer[1]<<3);
 			}
 		} else {
 			if(wavinfo.num_channels==1) {
 				// 16 bit mono
-				sample_buffer[1]+=1<<7;
-				audio_buffer[audio_wpos++] = (sample_buffer[1]<<4) + (sample_buffer[0]>>4);
+				uint8_t s1 = sample_buffer[1]+(1<<7);
+				sample = (s1<<4) + (sample_buffer[0]>>4);
 			} else {
 				// 16 bit stereo
-				sample_buffer[1]+=1<<7;
-				sample_buffer[3]+=1<<7;
-				audio_buffer[audio_wpos++] = ((sample_buffer[3]<<4) + (sample_buffer[2]>>4) + (sample_buffer[1]<<4) + (sample_buffer[0]>>4))>>1;
+				uint8_t s1 = sample_buffer[1]+(1<<7);
+				uint8_t s3 = sample_buffer[1]+(1<<7);
+				sample = ((s3<<4) + (sample_buffer[2]>>4) + (s1<<4) + (sample_buffer[0]>>4))>>1;
 			}
 		}
-		sample_pos = 0;
+		sample >>= 3 - volume;
+		switch (volume) {
+			case 2:
+			sample += 0x400;
+			break;
+			case 1:
+			sample += 0x600;
+			break;
+			case 0:
+			sample += 0x700;
+			break;
+			default:
+			break;
+		}
+		audio_buffer[audio_wpos++] = sample;
 	}
 }
 
@@ -72,18 +100,43 @@ void stop_audio(void) {
 
 static void DAC_timer_start(void) {
 	//set timer1 output compare A value
-	switch (wavinfo.sample_rate) {
-		case 8000:
-		OCR1A = (F_CPU / 8000);
-		break;
-		case 11025:
-		OCR1A = (F_CPU / 11025);
-		break;
-		case 22050:
-		OCR1A = (F_CPU / 22050);
-		break;
-		default:
-		OCR1A = (F_CPU / 44100);
+	if (special_mode == 3 || special_mode == 5) {
+		// Gaudi mode
+		switch (wavinfo.sample_rate) {
+			case 8000:
+			OCR1A = (F_CPU / 6000);
+			break;
+			case 11025:
+			OCR1A = (F_CPU / 8000);
+			break;
+			case 22050:
+			OCR1A = (F_CPU / 16000);
+			break;
+			case 44100:
+			default:
+			OCR1A = (F_CPU / 32000);
+			break;
+			case 48000:
+			OCR1A = (F_CPU / 35000);
+		}
+	} else {
+		switch (wavinfo.sample_rate) {
+			case 8000:
+			OCR1A = (F_CPU / 8000);
+			break;
+			case 11025:
+			OCR1A = (F_CPU / 11025);
+			break;
+			case 22050:
+			OCR1A = (F_CPU / 22050);
+			break;
+			case 44100:
+			default:
+			OCR1A = (F_CPU / 44100);
+			break;
+			case 48000:
+			OCR1A = (F_CPU / 48000);
+		}
 	}
 	TCCR1B |= _BV(CS10);		//start timer, no prescaling
 }
@@ -169,4 +222,11 @@ ISR(USART_TX_vect) {
 		sending = 0;
 		UDR0 = low_byte;
 	}
+}
+
+void volume_up (void) {
+	if (volume < 3) volume++;
+}
+void volume_down (void) {
+	if (volume > 0) volume--;
 }

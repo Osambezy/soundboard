@@ -13,6 +13,9 @@
 #include <stdint.h>
 
 volatile uint8_t new_sound = 0, new_sound_id = 0;
+uint8_t special_mode = 0;
+uint16_t credits_counter = 0;
+#define CREDITS_COUNTER_MAX 1000
 WAVinfo_t wavinfo;
 FATFS fs;
 
@@ -63,8 +66,37 @@ int main(void) {
 			hibernate_timer_stop();
 			new_sound = 0;
 			sei();
-			char* filename = filenames(new_sound_id);
-			if (filename == NULL) goto sound_ende;
+			switch (special_mode) {
+				case 1:
+				if (new_sound_id == 18) {
+					special_mode = 2;
+					goto sound_ende;
+				} else if (new_sound_id == 24) {
+					special_mode = 4;
+					goto sound_ende;
+				} else special_mode = 0;
+				break;
+				case 2:
+				special_mode = 3;
+				break;
+				case 4:
+				special_mode = 5;
+				break;
+				default:
+				special_mode = 0;
+			}
+			if (new_sound_id == 36) {
+				special_mode = 1;
+				goto sound_ende;
+			}
+			char* filename;
+			if (++credits_counter > CREDITS_COUNTER_MAX) {
+				credits_counter = 0;
+				filename = "image.hex";
+			} else {
+				filename = filenames(new_sound_id);
+				if (filename == NULL) goto sound_ende;
+			}
 			uint8_t tries = 3;
 			while (pf_open(filename) && pf_open("error1.wav")) {
 				if ((tries--) == 0) goto sound_ende;

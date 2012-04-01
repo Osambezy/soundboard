@@ -67,12 +67,12 @@ void disk_shutdown(void) {
 	SPSR = 0;
 	DDRB &= ~(_BV(DDB3) | _BV(DDB5));
 	
-	//set CS pin tri-state
+	// set CS pin tri-state
 	CSDDR &= ~(_BV(CS));
 }
 
 static inline void spi_card_vollgas(void) {
-	//SPCR &= ~(_BV(SPR1));
+	// set SPI clock to F_CPU/2 (maximum)
 	SPCR &= ~(_BV(SPR1) | _BV(SPR0));
 	SPSR = _BV(SPI2X);
 }

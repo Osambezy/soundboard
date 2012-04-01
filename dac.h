@@ -8,4 +8,7 @@ void DAC_shutdown(void);
 void process_audio(uint8_t data_byte);
 void stop_audio(void);
 
+void volume_up (void);
+void volume_down (void);
+
 #endif

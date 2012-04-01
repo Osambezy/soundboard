@@ -1,4 +1,5 @@
 #include "main.h"
+#include "dac.h"
 #include "buttons.h"
 #include "pin_config.h"
 #include <avr/io.h>
@@ -68,6 +69,9 @@ static uint8_t get_key(void) {
 		case row5:
 		id = 30;
 		break;
+		case (row3 | row4):
+		id = 36;
+		break;
 		default:
 		return 255;
 	}
@@ -107,8 +111,18 @@ ISR(TIMER2_OVF_vect) {  // debounce timer
 	if (debounce_count++ == DEBOUNCE_COUNT_MAX) {
 		debounce_count = 0;
 		if ((~PINC) & CMASK) {
-			new_sound = 1;
-			new_sound_id = get_key();
+			uint8_t id = get_key();
+			switch (id) {
+				case 30:
+				volume_up();
+				break;
+				case 31:
+				volume_down();
+				break;
+				default:
+				new_sound = 1;
+				new_sound_id = id;
+			}
 		}
 		// stop and reset timer
 		TCCR2B = 0;
