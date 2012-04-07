@@ -230,3 +230,27 @@ void volume_up (void) {
 void volume_down (void) {
 	if (volume > 0) volume--;
 }
+
+void sound_gut(void) {
+	wavinfo.bits_per_sample = 8;
+	wavinfo.sample_rate = 44100;
+	wavinfo.block_align = 1;
+	wavinfo.num_channels = 1;
+	for (uint8_t i = 0; i<200; i++) {
+		for (uint8_t j = 0; j<100; j++) process_audio(0x70);
+		for (uint8_t j = 0; j<100; j++) process_audio(0x90);
+	}
+	stop_audio();
+}
+
+void sound_osch(void) {
+	wavinfo.bits_per_sample = 8;
+	wavinfo.sample_rate = 44100;
+	wavinfo.block_align = 1;
+	wavinfo.num_channels = 1;
+	for (uint8_t i = 0; i<255; i++) {
+		for (uint8_t j = 0; j<11; j++) process_audio(0x70);
+		for (uint8_t j = 0; j<19; j++) process_audio(0x90);
+	}
+	stop_audio();
+}

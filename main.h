@@ -4,7 +4,7 @@
 #define F_CPU 20.000000E6
 
 // time since last keypress, when device goes into hibernate mode
-#define HIBER_TIME		300		// seconds
+#define HIBER_TIME		60		// seconds
 
 // time between key change interrupt and reading of keys
 #define DEBOUNCE_TIME	10		// milliseconds
@@ -13,10 +13,9 @@
 // should be increased to handle higher capacitances of the key matrix
 #define SWITCH_TIME		10		// microseconds
 
+#define CREDITS_COUNTER_MAX 1000
+
 #define HIBER_COUNT_MAX ((uint32_t) (HIBER_TIME * F_CPU / 256 / 1024))
 #define DEBOUNCE_COUNT_MAX ((uint8_t) (DEBOUNCE_TIME * F_CPU / 256 / 256 / 1000))
-
-void sound_gut(void);
-void sound_osch(void);
 
 #endif /* _MAIN_H_ */

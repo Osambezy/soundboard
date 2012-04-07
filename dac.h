@@ -11,4 +11,7 @@ void stop_audio(void);
 void volume_up (void);
 void volume_down (void);
 
+void sound_gut(void);
+void sound_osch(void);
+
 #endif

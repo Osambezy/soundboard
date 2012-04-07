@@ -8,8 +8,8 @@
 #define row1	_BV(7)
 #define row2	_BV(6)
 #define row3	_BV(5)
-#define row4	_BV(3)
-#define row5	_BV(2)
+#define row4	_BV(2)
+#define row5	_BV(3)
 
 // key matrix columns
 #define CMASK (_BV(0) | _BV(1) | _BV(2) | _BV(3) | _BV(4) | _BV(5)) 
