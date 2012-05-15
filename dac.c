@@ -12,11 +12,10 @@ static uint8_t sample_pos;
 static uint16_t audio_buffer[256];
 static volatile uint8_t audio_rpos;
 static uint8_t audio_wpos;
-static uint8_t buffer_ready;
 
 static volatile uint8_t volume = 3;
 
-static volatile uint8_t low_byte, sending;
+#define low_byte GPIOR1
 
 extern WAVinfo_t wavinfo;
 extern uint8_t special_mode;
@@ -30,24 +29,25 @@ static void DAC_silence(void);
 
 void process_audio(uint8_t data_byte) {
 	static uint8_t double_speed = 0;
-	
+
 	sample_buffer[sample_pos++] = data_byte;
 	
 	if (sample_pos==wavinfo.block_align) {
 		sample_pos = 0;
+		if (!FLAG_CHECK(PLAYING)) return;
 		if (special_mode == 5) {
 			if (double_speed) {
 				double_speed = 0;
 				return;
 			} else double_speed = 1;
 		}
-		if (buffer_ready) {
+		if (FLAG_CHECK(BUFFER_READY)) {
 			// playback running, wait if buffer is full
 			while (audio_rpos == audio_wpos);
 		} else {
 			// start playback as soon half of the buffer is filled
 			if (audio_wpos == 128) {
-				buffer_ready = 1;
+				FLAG_SET(BUFFER_READY);
 				DAC_timer_start();
 			}
 		}
@@ -72,15 +72,17 @@ void process_audio(uint8_t data_byte) {
 				sample = ((s3<<4) + (sample_buffer[2]>>4) + (s1<<4) + (sample_buffer[0]>>4))>>1;
 			}
 		}
-		sample >>= 3 - volume;
 		switch (volume) {
 			case 2:
+			sample >>= 1;
 			sample += 0x400;
 			break;
 			case 1:
+			sample >>= 2;
 			sample += 0x600;
 			break;
 			case 0:
+			sample >>= 3;
 			sample += 0x700;
 			break;
 			default:
@@ -95,7 +97,15 @@ void stop_audio(void) {
 	DAC_silence();
 	audio_rpos = 0;
 	audio_wpos = 0;
-	buffer_ready = 0;
+	FLAG_CLEAR(BUFFER_READY);
+	sample_pos = 0;
+	FLAG_SET(PLAYING);
+}
+
+void cancel_play(void) {
+	// interrupts the current sound when a new button is pressed
+	DAC_timer_stop();
+	FLAG_CLEAR(PLAYING);
 }
 
 static void DAC_timer_start(void) {
@@ -143,14 +153,15 @@ static void DAC_timer_start(void) {
 
 static void DAC_timer_stop(void) {
 	TCCR1B &= ~(_BV(CS10));		//stop timer
-	TCNT1 = 0;					//reset timer
+	TCNT1 = 0;			//reset timer
 }
 
 void DAC_init(void) {
 	sample_pos = 0;
-	buffer_ready = 0;
 	audio_rpos = 0;
 	audio_wpos = 0;
+	FLAG_CLEAR(BUFFER_READY);
+	FLAG_SET(PLAYING);
 	
 	// set LOAD pin as output and go to idle state (high)
 	DACDDR |= (1 << DACPIN_LOAD);
@@ -211,15 +222,15 @@ static inline void DAC_output(uint16_t data) {
 	trigger_load();
 	
 	low_byte = data;
-	sending = 1;
+	FLAG_SET(SENDING);
 	UDR0 = data>>8;
 }
 
 ISR(USART_TX_vect) {
 	// transmission completed
-	if (sending) {
+	if (FLAG_CHECK(SENDING)) {
 		// send second byte
-		sending = 0;
+		FLAG_CLEAR(SENDING);
 		UDR0 = low_byte;
 	}
 }

@@ -6,7 +6,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-extern volatile uint8_t new_sound, new_sound_id;
+extern volatile uint8_t new_sound_id;
 static uint8_t debounce_count = 0;
 
 static void set_keys_mode1(void) {
@@ -49,6 +49,7 @@ static uint8_t get_key(void) {
 	set_keys_mode2();
 	uint8_t rows = ((~PINB) & BMASK) + ((~PIND) & DMASK);
 	set_keys_mode1();
+	if ((rows == row4) && (columns == (col3 | col5))) return 36;
 	uint8_t id;
 	switch (rows) {
 		case row0:
@@ -68,9 +69,6 @@ static uint8_t get_key(void) {
 		break;
 		case row5:
 		id = 30;
-		break;
-		case (row3 | row4):
-		id = 36;
 		break;
 		default:
 		return 255;
@@ -119,8 +117,11 @@ ISR(TIMER2_OVF_vect) {  // debounce timer
 				case 31:
 				volume_down();
 				break;
+				//case 255:
+				//break;
 				default:
-				new_sound = 1;
+				//if (buffer_ready) cancel_play();
+				FLAG_SET(NEW_SOUND);
 				new_sound_id = id;
 			}
 		}

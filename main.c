@@ -12,7 +12,8 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
-volatile uint8_t new_sound = 0, new_sound_id = 0;
+volatile uint8_t new_sound_id = 0;
+uint8_t old_sound_id = 0;
 uint8_t special_mode = 0;
 uint16_t credits_counter = 0;
 
@@ -34,17 +35,21 @@ int main(void) {
 
 	while(1) {
 		cli(); // disable interrupts to avoid race condition with sleep function
-		if (new_sound) {
+		if (FLAG_CHECK(NEW_SOUND)) {
 			hibernate_timer_stop();
-			new_sound = 0;
+			FLAG_CLEAR(NEW_SOUND);
 			sei();
 			switch (special_mode) {
 				case 1:
-				if (new_sound_id == 18) {
+				if (new_sound_id == old_sound_id - 1) {
 					special_mode = 2;
 					goto sound_ende;
-				} else if (new_sound_id == 24) {
+				} else if (new_sound_id == old_sound_id + 1) {
 					special_mode = 4;
+					goto sound_ende;
+				} else if (new_sound_id == old_sound_id) {
+					credits_counter = CREDITS_COUNTER_MAX - 5;
+					special_mode = 0;
 					goto sound_ende;
 				} else special_mode = 0;
 				break;
@@ -61,6 +66,7 @@ int main(void) {
 				special_mode = 1;
 				goto sound_ende;
 			}
+			old_sound_id = new_sound_id;
 			char* filename;
 			if (++credits_counter > CREDITS_COUNTER_MAX) {
 				credits_counter = 0;
@@ -87,7 +93,7 @@ int main(void) {
 					res = pf_read(0, wavinfo.data_length, &br);
 					break;
 				}
-			} while (res==0 && br==read_length && wavinfo.data_length>0 && !new_sound);
+			} while (res==0 && br==read_length && wavinfo.data_length>0 && !FLAG_CHECK(NEW_SOUND));
 			stop_audio();
 			sound_ende:
 			hibernate_timer_init();
@@ -99,6 +105,4 @@ int main(void) {
 		}
 		hibernate_check();
 	}
-	
-	return 0;
 }
