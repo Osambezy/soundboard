@@ -15,6 +15,7 @@
 volatile uint8_t new_sound_id = 0;
 uint8_t old_sound_id = 0;
 uint8_t special_mode = 0;
+volatile uint8_t bank = 0;
 uint16_t credits_counter = 0;
 
 WAVinfo_t wavinfo;
@@ -72,7 +73,7 @@ int main(void) {
 				credits_counter = 0;
 				filename = "image.hex";
 			} else {
-				filename = filenames(new_sound_id);
+				filename = filenames(bank * 36 + new_sound_id);
 				if (filename == NULL) goto sound_ende;
 			}
 			uint8_t tries = 3;

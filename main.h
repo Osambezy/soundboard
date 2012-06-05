@@ -3,11 +3,13 @@
 
 #define F_CPU 20.000000E6
 
+#define NUM_BANKS 2
+
 // time since last keypress, when device goes into hibernate mode
 #define HIBER_TIME		15		// seconds (max. 858)
 
 // time between key change interrupt and reading of keys
-#define DEBOUNCE_TIME	10		// milliseconds (max. 835)
+#define DEBOUNCE_TIME	20		// milliseconds (max. 835)
 
 // delay for switching row/column mode (matrix multiplexing)
 // should be increased to handle higher capacitances of the key matrix

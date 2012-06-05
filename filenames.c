@@ -3,77 +3,149 @@
 char* filenames (uint8_t id) {
 	switch (id) {
 		case 0:
-		return "3.wav";
+		return "0-3.wav";
 		case 1:
-		return "4.wav";
+		return "0-4.wav";
 		case 2:
-		return "5.wav";
+		return "0-5.wav";
 		case 3:
-		return "6.wav";
+		return "0-6.wav";
 		case 4:
-		return "7.wav";
+		return "0-7.wav";
 		case 5:
-		return "D.wav";
+		return "0-D.wav";
 		case 6:
-		return "80.wav";
+		return "0-80.wav";
 		case 7:
-		return "81.wav";
+		return "0-81.wav";
 		case 8:
-		return "82.wav";
+		return "0-82.wav";
 		case 9:
-		return "83.wav";
+		return "0-83.wav";
 		case 10:
-		return "84.wav";
+		return "0-84.wav";
 		case 11:
-		return "NU.wav";
+		return "0-NU.wav";
 		case 12:
-		return "85.wav";
+		return "0-85.wav";
 		case 13:
-		return "86.wav";
+		return "0-86.wav";
 		case 14:
-		return "87.wav";
+		return "0-87.wav";
 		case 15:
-		return "88.wav";
+		return "0-88.wav";
 		case 16:
-		return "89.wav";
+		return "0-89.wav";
 		case 17:
-		return "SU.wav";
+		return "0-SU.wav";
 		case 18:
-		return "90.wav";
+		return "0-90.wav";
 		case 19:
-		return "91.wav";
+		return "0-91.wav";
 		case 20:
-		return "92.wav";
+		return "0-92.wav";
 		case 21:
-		return "93.wav";
+		return "0-93.wav";
 		case 22:
-		return "94.wav";
+		return "0-94.wav";
 		case 23:
-		return "UM.wav";
+		return "0-UM.wav";
 		case 24:
-		return "95.wav";
+		return "0-95.wav";
 		case 25:
-		return "96.wav";
+		return "0-96.wav";
 		case 26:
-		return "97.wav";
+		return "0-97.wav";
 		case 27:
-		return "98.wav";
+		return "0-98.wav";
 		case 28:
-		return "99.wav";
+		return "0-99.wav";
 		case 29:
-		return "SKL.wav";
+		return "0-SKL.wav";
 		case 30:
-		return "M.wav";
+		return "0-M.wav";
 		case 31:
-		return "AW.wav";
+		return "0-AW.wav";
 		case 32:
-		return "WT.wav";
+		return "0-WT.wav";
 		case 33:
-		return "AR.wav";
+		return "0-AR.wav";
 		case 34:
-		return "K.wav";
+		return "0-K.wav";
 		case 35:
-		return "ST.wav";
+		return "0-ST.wav";
+		case 36:
+		return "1-3.wav";
+		case 37:
+		return "1-4.wav";
+		case 38:
+		return "1-5.wav";
+		case 39:
+		return "1-6.wav";
+		case 40:
+		return "1-7.wav";
+		case 41:
+		return "1-D.wav";
+		case 42:
+		return "1-80.wav";
+		case 43:
+		return "1-81.wav";
+		case 44:
+		return "1-82.wav";
+		case 45:
+		return "1-83.wav";
+		case 46:
+		return "1-84.wav";
+		case 47:
+		return "1-NU.wav";
+		case 48:
+		return "1-85.wav";
+		case 49:
+		return "1-86.wav";
+		case 50:
+		return "1-87.wav";
+		case 51:
+		return "1-88.wav";
+		case 52:
+		return "1-89.wav";
+		case 53:
+		return "1-SU.wav";
+		case 54:
+		return "1-90.wav";
+		case 55:
+		return "1-91.wav";
+		case 56:
+		return "1-92.wav";
+		case 57:
+		return "1-93.wav";
+		case 58:
+		return "1-94.wav";
+		case 59:
+		return "1-UM.wav";
+		case 60:
+		return "1-95.wav";
+		case 61:
+		return "1-96.wav";
+		case 62:
+		return "1-97.wav";
+		case 63:
+		return "1-98.wav";
+		case 64:
+		return "1-99.wav";
+		case 65:
+		return "1-SKL.wav";
+		case 66:
+		return "1-M.wav";
+		case 67:
+		return "1-AW.wav";
+		case 68:
+		return "1-WT.wav";
+		case 69:
+		return "1-AR.wav";
+		case 70:
+		return "1-K.wav";
+		case 71:
+		return "1-ST.wav";
 		default:
 		return NULL;
 	}

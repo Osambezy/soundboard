@@ -8,6 +8,7 @@
 
 extern volatile uint8_t new_sound_id;
 static uint8_t debounce_count = 0;
+extern volatile uint8_t bank;
 
 static void set_keys_mode1(void) {
 	//inputs
@@ -42,6 +43,10 @@ void keys_init(void) {
 	PCICR |= _BV(PCIE1);
 	// enable debounce timer interrupt
 	TIMSK2 |= _BV(TOIE2);
+}
+
+inline void next_bank(void) {
+	if (++bank == NUM_BANKS) bank = 0;
 }
 
 static uint8_t get_key(void) {
@@ -111,6 +116,9 @@ ISR(TIMER2_OVF_vect) {  // debounce timer
 		if ((~PINC) & CMASK) {
 			uint8_t id = get_key();
 			switch (id) {
+				case 32:
+				next_bank();
+				break;
 				case 30:
 				volume_up();
 				break;
