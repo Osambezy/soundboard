@@ -73,8 +73,8 @@ int main(void) {
 				credits_counter = 0;
 				filename = "image.hex";
 			} else {
-				filename = filenames(bank * 36 + new_sound_id);
-				if (filename == NULL) goto sound_ende;
+				if (new_sound_id == 255) goto sound_ende;
+				filename = filenames(bank, new_sound_id);
 			}
 			uint8_t tries = 3;
 			while (pf_open(filename) && pf_open("error1.wav")) {

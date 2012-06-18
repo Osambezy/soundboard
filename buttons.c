@@ -45,10 +45,6 @@ void keys_init(void) {
 	TIMSK2 |= _BV(TOIE2);
 }
 
-inline void next_bank(void) {
-	if (++bank == NUM_BANKS) bank = 0;
-}
-
 static uint8_t get_key(void) {
 	uint8_t columns = (~PINC) & CMASK;
 	set_keys_mode2();
@@ -116,8 +112,17 @@ ISR(TIMER2_OVF_vect) {  // debounce timer
 		if ((~PINC) & CMASK) {
 			uint8_t id = get_key();
 			switch (id) {
+				case 35:
+				bank = 0;
+				break;
+				case 34:
+				bank = 1;
+				break;
+				case 33:
+				bank = 2;
+				break;
 				case 32:
-				next_bank();
+				bank = 3;
 				break;
 				case 30:
 				volume_up();

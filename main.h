@@ -3,8 +3,6 @@
 
 #define F_CPU 20.000000E6
 
-#define NUM_BANKS 2
-
 // time since last keypress, when device goes into hibernate mode
 #define HIBER_TIME		15		// seconds (max. 858)
 
